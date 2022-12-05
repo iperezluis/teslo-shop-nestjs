@@ -22,3 +22,9 @@ docker-compose up -d
 ```
 yarn start:dev
 ```
+
+5. Fill the database you must call the following POST request:
+
+```
+http://localhost:3000/api/seed
+```
