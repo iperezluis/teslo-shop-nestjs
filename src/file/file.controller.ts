@@ -3,6 +3,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Post,
   Res,
   UploadedFile,
@@ -30,7 +31,7 @@ export class FileController {
     return res.sendFile(path);
   }
 
-  @Post('product')
+  @Post('product/:id')
   @UseInterceptors(
     FileInterceptor('file', {
       fileFilter: fileFilter,
@@ -44,8 +45,11 @@ export class FileController {
       }),
     }),
   )
-  uploadProductImage(@UploadedFile() file: Express.Multer.File) {
-    return this.fileService.upload(file);
+  uploadProductImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.fileService.uploadProductImage(id, file);
   }
 
   @Get('images')
@@ -57,8 +61,8 @@ export class FileController {
     return this.fileService.findAllVideos();
   }
 
-  @Delete('product/:key')
-  deletedImage(@Param('key') key: string) {
-    return this.fileService.remove(key);
+  @Delete('product/:id/:key')
+  deletedProductImage(@Param('id',ParseUUIDPipe) id: string, @Param('key') key: string) {
+    return this.fileService.removeProductImage(id, key);
   }
 }

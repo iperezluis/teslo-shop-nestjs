@@ -1,7 +1,11 @@
+import { join } from 'path';
+
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { ProductsModule } from './products/products.module';
+
 import { CommonModule } from './common/common.module';
 import { SeedModule } from './seed/seed.module';
 import { FileModule } from './file/file.module';
@@ -21,6 +25,9 @@ import { awsS3 } from './file/helpers/aws-sdk.helper';
       password: process.env.DB_PASSWORD,
       autoLoadEntities: true,
       synchronize: true, //! cambiar a falso en produccion
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
     }),
     ProductsModule,
     CommonModule,

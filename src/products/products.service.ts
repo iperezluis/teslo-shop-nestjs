@@ -4,6 +4,8 @@ import {
   Logger,
   BadRequestException,
   NotFoundException,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
@@ -13,6 +15,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
 import { validate as isUUID } from 'uuid';
 import { ProductImage } from './entities';
+import { FileService } from 'src/file/file.service';
 
 @Injectable()
 export class ProductsService {
@@ -26,6 +29,8 @@ export class ProductsService {
     private readonly productImageRepository: Repository<ProductImage>,
 
     private readonly dataSource: DataSource,
+    @Inject(forwardRef(() => FileService))
+    private readonly fileService: FileService,
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
@@ -102,7 +107,6 @@ export class ProductsService {
       id,
       ...toUpdate,
     });
-
     if (!product)
       throw new NotFoundException(`Product with id ${id} not found`);
     //  create query runner
@@ -135,12 +139,28 @@ export class ProductsService {
     }
   }
 
-  async remove(id: string) {
+  async removeProduct(id: string) {
     const { affected } = await this.productRepository.delete(id);
     if (affected === 0) {
       throw new NotFoundException(`Product with id: ${id} not found`);
     }
     return `Product deleted succesfully`;
+  }
+
+  async removeImageProduct(id: string, key: string) {
+    const secureURL = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/user/products/images/${key}`;
+    console.log('secure', secureURL);
+    try {
+      const { affected } = await this.productImageRepository.delete({
+        url: secureURL,
+      });
+      if (affected === 0) {
+        throw new NotFoundException(`Product with id: ${id} not found`);
+      }
+      return `Product deleted succesfully`;
+    } catch (error) {
+      this.handleExeptions(error);
+    }
   }
   private handleExeptions(error: any) {
     // console.log(error);

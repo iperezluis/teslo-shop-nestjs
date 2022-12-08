@@ -1,4 +1,4 @@
-import { Injectable, Param } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Param } from '@nestjs/common';
 import {
   DeleteObjectCommand,
   ListObjectsCommand,
@@ -9,10 +9,18 @@ import { awsS3 } from './helpers/aws-sdk.helper';
 import { join } from 'path';
 import { existsSync, createReadStream } from 'fs';
 import { ConfigService } from '@nestjs/config';
+import { ProductsService } from '../products/products.service';
+import { Repository } from 'typeorm';
+import { ProductImage } from 'src/products/entities';
+import { UpdateProductDto } from 'src/products/dto/update-product.dto';
 
 @Injectable()
 export class FileService {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    @Inject(forwardRef(() => ProductsService))
+    private readonly productService: ProductsService, //
+    private readonly configService: ConfigService, // private readonly productImageRepository: Repository<ProductImage>,
+  ) {}
   getStaticProductImage(imageName: string) {
     //verificar que el archivo existea sin importar que tipo de dato es
     const path = join(__dirname, '../../static/uploads', imageName);
@@ -24,8 +32,8 @@ export class FileService {
     return path;
   }
 
-  async upload(file: Express.Multer.File) {
-    const { originalname = '', fieldname, path, mimetype } = file;
+  async uploadProductImage(id: string, file: Express.Multer.File) {
+    const { path = '', mimetype } = file;
     const fileStream = createReadStream(path);
     // console.log(fileStream);
     const { ...params } = this.getParams(file);
@@ -36,7 +44,13 @@ export class FileService {
         process.env.AWS_BUCKET_NAME
       }.s3.amazonaws.com/${params.Key.replaceAll(' ', '+')}`;
       console.log({ result });
-      return { result, secureURL };
+      const product = await this.productService.findOnePlain(id);
+      let productUpdated: UpdateProductDto;
+      product.images.push(secureURL);
+      productUpdated = { ...product };
+      // const { ...detailsProduct } = product;
+      await this.productService.update(id, productUpdated);
+      return { secureURL, productUpdated };
       //code aws
       // const secureURL = `${this.configService.get(
       //   'HOST_NAME',
@@ -97,15 +111,16 @@ export class FileService {
     return `This action updates a  file`;
   }
 
-  async remove(@Param('key') key: string) {
+  async removeProductImage(id: string, key: string) {
     const uploadParams: PutObjectCommandInput = {
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: key,
+      Key: `user/products/images/${key}`,
     };
     try {
       const data = await awsS3().send(new DeleteObjectCommand(uploadParams));
       console.log({ data });
-      return data;
+      this.productService.removeImageProduct(id, key);
+      return { ok: 'successfully deleted', id, key };
     } catch (error) {
       console.log(error);
     }
@@ -116,7 +131,9 @@ export class FileService {
     const uploadParams: PutObjectCommandInput = {
       Bucket: process.env.AWS_BUCKET_NAME,
       Key:
-        mimetype === 'video/mp4' ? `videos/${filename}` : `images/${filename}`,
+        mimetype === 'video/mp4'
+          ? `user/products/videos/${filename}`
+          : `user/products/images/${filename}`,
       ContentType: mimetype,
       // ACL: 'public-read',
     };
