@@ -1,13 +1,17 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductsModule } from './products/products.module';
 import { CommonModule } from './common/common.module';
 import { SeedModule } from './seed/seed.module';
+import { FileModule } from './file/file.module';
+import { awsS3 } from './file/helpers/aws-sdk.helper';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      load: [awsS3],
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -21,6 +25,7 @@ import { SeedModule } from './seed/seed.module';
     ProductsModule,
     CommonModule,
     SeedModule,
+    FileModule,
   ],
 })
 export class AppModule {}
