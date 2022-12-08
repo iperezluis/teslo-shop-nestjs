@@ -3,7 +3,7 @@
 /node_modules
 postgres/
 .env
-
+public/
 # Logs
 logs
 *.log
