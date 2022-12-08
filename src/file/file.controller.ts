@@ -50,7 +50,11 @@ export class FileController {
 
   @Get('images')
   getProductImages() {
-    return this.fileService.findAll();
+    return this.fileService.findAllImages();
+  }
+  @Get('videos')
+  getAllVideos() {
+    return this.fileService.findAllVideos();
   }
 
   @Delete('product/:key')

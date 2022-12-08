@@ -25,16 +25,18 @@ export class FileService {
   }
 
   async upload(file: Express.Multer.File) {
-    const { originalname = '', fieldname, path, filename } = file;
+    const { originalname = '', fieldname, path, mimetype } = file;
     const fileStream = createReadStream(path);
     // console.log(fileStream);
     const { ...params } = this.getParams(file);
     const command = new PutObjectCommand({ ...params, Body: fileStream });
     try {
-      // await awsS3().
       const result = await awsS3().send(command);
+      const secureURL = `https://${
+        process.env.AWS_BUCKET_NAME
+      }.s3.amazonaws.com/${params.Key.replaceAll(' ', '+')}`;
       console.log({ result });
-      return result;
+      return { result, secureURL };
       //code aws
       // const secureURL = `${this.configService.get(
       //   'HOST_NAME',
@@ -42,23 +44,46 @@ export class FileService {
       // return secureURL;
     } catch (error) {
       console.log(error);
+      return error;
     }
   }
 
-  async findAll() {
+  async findAllImages() {
     const command = new ListObjectsCommand({
       Bucket: process.env.AWS_BUCKET_NAME,
+      Prefix: 'images',
     });
 
     try {
       const images = await awsS3().send(command);
       let dataImages: string[] = [];
       const data = images.Contents.map((el) => {
-        const secureURL = `https://${process.env.AWS_BUCKET_NAME}.s3.amazon.com/${el.Key}`;
+        const secureURL = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${el.Key}`;
         dataImages.push(secureURL);
       });
       console.log(images);
       return dataImages;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  async findAllVideos() {
+    const command = new ListObjectsCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Prefix: 'videos',
+    });
+
+    try {
+      const images = await awsS3().send(command);
+      let videos: string[] = [];
+      const data = images.Contents.map((el) => {
+        const secureURL = `https://${
+          process.env.AWS_BUCKET_NAME
+        }.s3.amazonaws.com/${el.Key.replaceAll(' ', '+')}`;
+        videos.push(secureURL);
+      });
+      console.log(images);
+      return videos;
     } catch (error) {
       console.log(error);
     }
@@ -90,7 +115,8 @@ export class FileService {
     const { filename, mimetype } = file;
     const uploadParams: PutObjectCommandInput = {
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `images/${filename}`,
+      Key:
+        mimetype === 'video/mp4' ? `videos/${filename}` : `images/${filename}`,
       ContentType: mimetype,
       // ACL: 'public-read',
     };
