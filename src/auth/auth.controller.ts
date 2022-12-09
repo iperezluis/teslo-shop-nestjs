@@ -6,11 +6,16 @@ import {
   Patch,
   Param,
   Delete,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
+import { RowHeaders, GetUser } from './decorators/';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
+import { User } from './entities/user.entity';
 
 @Controller('auth')
 export class AuthController {
@@ -23,6 +28,14 @@ export class AuthController {
   @Post('login')
   loginUser(@Body() loginUserDto: LoginUserDto) {
     return this.authService.login(loginUserDto);
+  }
+  @Get('private')
+  @UseGuards(AuthGuard())
+  checkPrivateRoute(
+    @GetUser('email') user: User,
+    @RowHeaders() rawHeaders: string[],
+  ) {
+    return { user, rawHeaders };
   }
 
   @Get('users')

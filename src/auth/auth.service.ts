@@ -5,7 +5,6 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -16,6 +15,7 @@ import { UpdateAuthDto } from './dto/update-auth.dto';
 import { User } from './entities/user.entity';
 import { LoginUserDto } from './dto/login-user.dto';
 import { JwtPayload } from './interfaces/payload.interface';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
@@ -33,8 +33,9 @@ export class AuthService {
         password: bcrypt.hashSync(password, 10),
       });
       await this.userRepository.save(user);
-      // delete user.password;
-      return user;
+      const token = this.getJwtToken({ id: user.id });
+      delete user.password;
+      return { ...user, token };
     } catch (error) {
       console.log(error);
       this.handleErrors(error);
@@ -46,7 +47,7 @@ export class AuthService {
       // const user = await this.userRepository.findOne({ where: { email}, select: { email: true, password: true} });
       const user = await this.userRepository.findOne({
         where: { email },
-        select: { email: true, password: true },
+        select: { id: true, email: true, password: true },
       });
       console.log(user);
       if (!user) {
@@ -56,7 +57,7 @@ export class AuthService {
       if (!bcrypt.compareSync(password, user.password)) {
         throw new UnauthorizedException(`credentials are no valid (password)`);
       }
-      const token = this.getJwtToken({ email: user.email });
+      const token = this.getJwtToken({ id: user.id });
       return {
         ...user,
         token: token,
@@ -66,10 +67,17 @@ export class AuthService {
       this.handleErrors(error);
     }
   }
+  async getIdByToken() {
+    return;
+  }
+  //TODO build app with dynamoDB and insert SDK
+  //TODO fix the issue from NextAuth within SPace-Shop now!
 
   private getJwtToken(payload: JwtPayload) {
-    const token = this.jwtService.sign(payload);
-
+    const token = this.jwtService.sign(payload, {
+      secret: process.env.JWT_SECRET,
+      // expiresIn: '2 days',
+    });
     return token;
   }
 
