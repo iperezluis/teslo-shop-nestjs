@@ -10,11 +10,13 @@ import { CommonModule } from './common/common.module';
 import { SeedModule } from './seed/seed.module';
 import { FileModule } from './file/file.module';
 import { awsS3 } from './file/helpers/aws-sdk.helper';
+import { AuthModule } from './auth/auth.module';
+import { awsSNS } from './auth/helpers/aws-sdk-sns.helper';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [awsS3],
+      load: [awsS3, awsSNS],
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
@@ -33,6 +35,7 @@ import { awsS3 } from './file/helpers/aws-sdk.helper';
     CommonModule,
     SeedModule,
     FileModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
