@@ -14,12 +14,16 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationDto } from '../common/dtos/pagination.dto';
 import { TagsDto } from 'src/common/dtos/tags.dto';
+import { Auth, ValidRoles } from 'src/auth/decorators';
 
 @Controller('products')
+//Lo maravilloso de este Auth es que solo al colocarlo aqui protegemos todas las rutas de abajo, os ea que nadie que no este authenticado como monimo no pueda ejecutar ninguna
+// @Auth()
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
+  @Auth(ValidRoles.admin)
   create(@Body() createProductDto: CreateProductDto) {
     return this.productsService.create(createProductDto);
   }
@@ -35,6 +39,7 @@ export class ProductsController {
   }
 
   @Patch(':id')
+  @Auth(ValidRoles.admin)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateProductDto: UpdateProductDto,
@@ -43,6 +48,7 @@ export class ProductsController {
   }
 
   @Delete(':id')
+  @Auth(ValidRoles.admin)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.productsService.removeProduct(id);
   }

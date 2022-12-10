@@ -13,6 +13,7 @@ import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { diskStorage } from 'multer';
+import { Auth, ValidRoles } from 'src/auth/decorators';
 import { FileService } from './file.service';
 import { fileNamer, fileFilter } from './helpers';
 
@@ -32,6 +33,7 @@ export class FileController {
   }
 
   @Post('product/:id')
+  @Auth(ValidRoles.admin)
   @UseInterceptors(
     FileInterceptor('file', {
       fileFilter: fileFilter,
@@ -62,7 +64,11 @@ export class FileController {
   }
 
   @Delete('product/:id/:key')
-  deletedProductImage(@Param('id',ParseUUIDPipe) id: string, @Param('key') key: string) {
+  @Auth(ValidRoles.admin)
+  deletedProductImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('key') key: string,
+  ) {
     return this.fileService.removeProductImage(id, key);
   }
 }

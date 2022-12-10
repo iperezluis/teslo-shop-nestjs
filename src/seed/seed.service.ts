@@ -6,6 +6,7 @@ import { initialData } from './data/seed-data';
 @Injectable()
 export class SeedService {
   constructor(private readonly productService: ProductsService) {}
+
   async fillDBSeed() {
     this.inserteNewProducts();
 

@@ -1,4 +1,10 @@
-import { forwardRef, Inject, Injectable, Param } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+  Param,
+} from '@nestjs/common';
 import {
   DeleteObjectCommand,
   ListObjectsCommand,
@@ -13,6 +19,7 @@ import { ProductsService } from '../products/products.service';
 import { Repository } from 'typeorm';
 import { ProductImage } from 'src/products/entities';
 import { UpdateProductDto } from 'src/products/dto/update-product.dto';
+import { InternalErrorException } from '@aws-sdk/client-sns';
 
 @Injectable()
 export class FileService {
@@ -70,8 +77,12 @@ export class FileService {
 
     try {
       const images = await awsS3().send(command);
+      if (!images.Contents) {
+        throw new NotFoundException('images not found');
+      }
+
       let dataImages: string[] = [];
-      const data = images.Contents.map((el) => {
+      images.Contents.map((el) => {
         const secureURL = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${el.Key}`;
         dataImages.push(secureURL);
       });
@@ -79,6 +90,7 @@ export class FileService {
       return dataImages;
     } catch (error) {
       console.log(error);
+      this.handleExecutions(error);
     }
   }
   async findAllVideos() {
@@ -138,5 +150,12 @@ export class FileService {
       // ACL: 'public-read',
     };
     return uploadParams;
+  }
+
+  private handleExecutions(error: any) {
+    if (error.status === 404) {
+      throw new NotFoundException('the files not found');
+    }
+    throw new InternalErrorException(error.detail);
   }
 }

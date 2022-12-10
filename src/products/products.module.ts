@@ -6,6 +6,7 @@ import { ProductsController } from './products.controller';
 
 import { Product, ProductImage } from './entities';
 import { FileModule } from 'src/file/file.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   controllers: [ProductsController],
@@ -13,6 +14,7 @@ import { FileModule } from 'src/file/file.module';
   imports: [
     TypeOrmModule.forFeature([Product, ProductImage]),
     forwardRef(() => FileModule),
+    AuthModule
   ],
   exports: [ProductsService],
 })

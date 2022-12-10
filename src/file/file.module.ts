@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { ProductsModule } from '../products/products.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product, ProductImage } from 'src/products/entities';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   controllers: [FileController],
@@ -12,6 +13,7 @@ import { Product, ProductImage } from 'src/products/entities';
   imports: [
     TypeOrmModule.forFeature([Product, ProductImage]),
     forwardRef(() => ProductsModule),
+    AuthModule
   ],
   exports: [FileService],
 })
