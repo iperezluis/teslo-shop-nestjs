@@ -85,7 +85,6 @@ export class ProductsService {
         .leftJoinAndSelect('prod.images', 'prodImages')
         .getOne();
     }
-
     if (!product) {
       throw new NotFoundException(`Product with term: ${term} not found`);
     }
@@ -147,16 +146,16 @@ export class ProductsService {
     return `Product deleted succesfully`;
   }
 
-  async removeImageProduct(id: string, key: string) {
-    const secureURL = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/user/products/images/${key}`;
-    console.log('secure', secureURL);
+  async removeImageProduct(product: any, key: string) {
+    const secureURL = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/products/${product.id}/images/${key}`;
+    // console.log('secure', secureURL);
     try {
       const { affected } = await this.productImageRepository.delete({
         url: secureURL,
       });
-      if (affected === 0) {
-        throw new NotFoundException(`Product with id: ${id} not found`);
-      }
+      // if (affected === 0) {
+      //   throw new NotFoundException(`Product with id: ${id} not found`);
+      // }
       return `Product deleted succesfully`;
     } catch (error) {
       this.handleExeptions(error);

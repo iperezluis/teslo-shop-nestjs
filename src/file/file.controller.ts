@@ -33,7 +33,7 @@ export class FileController {
   }
 
   @Post('product/:id')
-  @Auth(ValidRoles.admin)
+  // @Auth(ValidRoles.admin)
   @UseInterceptors(
     FileInterceptor('file', {
       fileFilter: fileFilter,
@@ -64,7 +64,7 @@ export class FileController {
   }
 
   @Delete('product/:id/:key')
-  @Auth(ValidRoles.admin)
+  // @Auth(ValidRoles.admin)
   deletedProductImage(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('key') key: string,

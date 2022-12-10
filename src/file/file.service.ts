@@ -40,18 +40,30 @@ export class FileService {
   }
 
   async uploadProductImage(id: string, file: Express.Multer.File) {
-    const { path = '', mimetype } = file;
+    //en este punto verificamos que exista un producto con el id al que quieres subir la images a s3  de lo contrario retorna product not found
+    const product = await this.productService.findOnePlain(id);
+
+    const { path = '', mimetype, filename } = file;
     const fileStream = createReadStream(path);
+    const uploadParams: PutObjectCommandInput = {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key:
+        mimetype === 'video/mp4'
+          ? `products/${product.id}/videos/${filename}`
+          : `products/${product.id}/images/${filename}`,
+      ContentType: mimetype,
+      Body: fileStream,
+
+      // ACL: 'public-read',
+    };
     // console.log(fileStream);
-    const { ...params } = this.getParams(file);
-    const command = new PutObjectCommand({ ...params, Body: fileStream });
+    const command = new PutObjectCommand(uploadParams);
     try {
       const result = await awsS3().send(command);
       const secureURL = `https://${
         process.env.AWS_BUCKET_NAME
-      }.s3.amazonaws.com/${params.Key.replaceAll(' ', '+')}`;
-      console.log({ result });
-      const product = await this.productService.findOnePlain(id);
+      }.s3.amazonaws.com/${uploadParams.Key.replaceAll(' ', '+')}`;
+      // console.log({ result });
       let productUpdated: UpdateProductDto;
       product.images.push(secureURL);
       productUpdated = { ...product };
@@ -72,22 +84,23 @@ export class FileService {
   async findAllImages() {
     const command = new ListObjectsCommand({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Prefix: 'images',
+      Prefix: 'user/product/images',
     });
 
     try {
       const images = await awsS3().send(command);
+      console.log('imafes', images['$metadata']);
       if (!images.Contents) {
         throw new NotFoundException('images not found');
       }
 
-      let dataImages: string[] = [];
+      let Allimages: string[] = [];
       images.Contents.map((el) => {
         const secureURL = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${el.Key}`;
-        dataImages.push(secureURL);
+        Allimages.push(secureURL);
       });
       console.log(images);
-      return dataImages;
+      return Allimages;
     } catch (error) {
       console.log(error);
       this.handleExecutions(error);
@@ -100,16 +113,16 @@ export class FileService {
     });
 
     try {
-      const images = await awsS3().send(command);
-      let videos: string[] = [];
-      const data = images.Contents.map((el) => {
+      const videos = await awsS3().send(command);
+      let Allvideos: string[] = [];
+      videos.Contents.map((el) => {
         const secureURL = `https://${
           process.env.AWS_BUCKET_NAME
         }.s3.amazonaws.com/${el.Key.replaceAll(' ', '+')}`;
-        videos.push(secureURL);
+        Allvideos.push(secureURL);
       });
-      console.log(images);
-      return videos;
+      // console.log(videos);
+      return Allvideos;
     } catch (error) {
       console.log(error);
     }
@@ -124,33 +137,36 @@ export class FileService {
   }
 
   async removeProductImage(id: string, key: string) {
+    //buscamaos si el producto existe
+    const product = await this.productService.findOnePlain(id);
+
     const uploadParams: PutObjectCommandInput = {
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `user/products/images/${key}`,
+      Key: `products/${product.id}/images/${key}`,
     };
     try {
       const data = await awsS3().send(new DeleteObjectCommand(uploadParams));
       console.log({ data });
-      this.productService.removeImageProduct(id, key);
+      await this.productService.removeImageProduct(product, key);
       return { ok: 'successfully deleted', id, key };
     } catch (error) {
       console.log(error);
     }
   }
   //clean code, don't repeat yourselft
-  private getParams(file: Express.Multer.File) {
-    const { filename, mimetype } = file;
-    const uploadParams: PutObjectCommandInput = {
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key:
-        mimetype === 'video/mp4'
-          ? `user/products/videos/${filename}`
-          : `user/products/images/${filename}`,
-      ContentType: mimetype,
-      // ACL: 'public-read',
-    };
-    return uploadParams;
-  }
+  // private getParams(id:string, file: Express.Multer.File) {
+  //   const { filename, mimetype } = file;
+  //   const uploadParams: PutObjectCommandInput = {
+  //     Bucket: process.env.AWS_BUCKET_NAME,
+  //     Key:
+  //       mimetype === 'video/mp4'
+  /*         ? `products/videos/${filename}`*/
+  //         : `users/products/images/${filename}`,
+  //     ContentType: mimetype,
+  //     // ACL: 'public-read',
+  //   };
+  //   return uploadParams;
+  // }
 
   private handleExecutions(error: any) {
     if (error.status === 404) {
