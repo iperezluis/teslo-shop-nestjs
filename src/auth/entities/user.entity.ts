@@ -1,3 +1,4 @@
+import { Product } from 'src/products/entities';
 import {
   BeforeInsert,
   BeforeUpdate,
@@ -41,6 +42,11 @@ export class User {
     default: '',
   })
   image?: string;
+
+  @OneToMany(() => Product, (product) => product.user, {
+    onDelete: 'CASCADE',
+  })
+  products: Product[];
 
   @BeforeInsert()
   checkFieldBeforeInsert() {

@@ -14,18 +14,19 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationDto } from '../common/dtos/pagination.dto';
 import { TagsDto } from 'src/common/dtos/tags.dto';
-import { Auth, ValidRoles } from 'src/auth/decorators';
+import { Auth, GetUser, ValidRoles } from 'src/auth/decorators';
+import { User } from 'src/auth/entities/user.entity';
 
 @Controller('products')
 //Lo maravilloso de este Auth es que solo al colocarlo aqui protegemos todas las rutas de abajo, os ea que nadie que no este authenticado como monimo no pueda ejecutar ninguna
 // @Auth()
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
-
+  //!en este caso como quiero que mi backend trabaje asi, quiero que solo los administradores puedan crear productos para vender por eso lo colocamos aqui
   @Post()
-  @Auth(ValidRoles.admin)
-  create(@Body() createProductDto: CreateProductDto) {
-    return this.productsService.create(createProductDto);
+  @Auth()
+  create(@Body() createProductDto: CreateProductDto, @GetUser() user: User) {
+    return this.productsService.create(createProductDto, user);
   }
 
   @Get()
@@ -43,8 +44,9 @@ export class ProductsController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateProductDto: UpdateProductDto,
+    @GetUser() user: User,
   ) {
-    return this.productsService.update(id, updateProductDto);
+    return this.productsService.update(id, updateProductDto, user);
   }
 
   @Delete(':id')

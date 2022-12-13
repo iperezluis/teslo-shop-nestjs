@@ -68,7 +68,7 @@ export class FileService {
       product.images.push(secureURL);
       productUpdated = { ...product };
       // const { ...detailsProduct } = product;
-      await this.productService.update(id, productUpdated);
+      await this.productService.update(id, productUpdated, product.user);
       return { secureURL, productUpdated };
       //code aws
       // const secureURL = `${this.configService.get(

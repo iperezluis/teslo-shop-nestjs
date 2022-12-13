@@ -6,7 +6,7 @@ export class SeedController {
   constructor(private readonly seedService: SeedService) {}
 
   @Post()
-  @Auth(ValidRoles.admin)
+  // @Auth(ValidRoles.admin)
   fillSeedDB() {
     return this.seedService.fillDBSeed();
   }

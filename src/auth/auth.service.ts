@@ -16,6 +16,7 @@ import { User } from './entities/user.entity';
 import { LoginUserDto } from './dto/login-user.dto';
 import { JwtPayload } from './interfaces/payload.interface';
 import { JwtService } from '@nestjs/jwt';
+import { IncomingHttpHeaders } from 'http';
 
 @Injectable()
 export class AuthService {
@@ -67,8 +68,12 @@ export class AuthService {
       this.handleErrors(error);
     }
   }
-  async getIdByToken() {
-    return;
+  async checkAuthStatus(user: User) {
+    const token = this.getJwtToken({ id: user.id });
+    return {
+      ...user,
+      token: token,
+    };
   }
   //TODO build app with dynamoDB and insert SDK
   //TODO fix the issue from NextAuth within SPace-Shop now!

@@ -16,6 +16,7 @@ import { Product } from './entities/product.entity';
 import { validate as isUUID } from 'uuid';
 import { ProductImage } from './entities';
 import { FileService } from 'src/file/file.service';
+import { User } from 'src/auth/entities/user.entity';
 
 @Injectable()
 export class ProductsService {
@@ -33,7 +34,10 @@ export class ProductsService {
     private readonly fileService: FileService,
   ) {}
 
-  async create(createProductDto: CreateProductDto): Promise<Product> {
+  async create(
+    createProductDto: CreateProductDto,
+    user: User,
+  ): Promise<Product> {
     try {
       const { images = [], ...productDetails } = createProductDto;
       const product = this.productRepository.create({
@@ -42,6 +46,7 @@ export class ProductsService {
         images: images.map((image) =>
           this.productImageRepository.create({ url: image }),
         ),
+        user: user,
       });
       await this.productRepository.save(product);
       return product;
@@ -100,7 +105,7 @@ export class ProductsService {
     };
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto) {
+  async update(id: string, updateProductDto: UpdateProductDto, user: User) {
     const { images, ...toUpdate } = updateProductDto;
     const product = await this.productRepository.preload({
       id,
@@ -122,6 +127,7 @@ export class ProductsService {
           this.productImageRepository.create({ url: image }),
         );
       }
+      product.user = user;
       await queryRunner.manager.save(product);
       // we do the commit and close connection with release
       await queryRunner.commitTransaction();
